@@ -6,7 +6,7 @@ import time
 pygame.init()
 
 WIDTH, HEIGHT = 800, 600
-UI_HEIGHT = 120  # Altura reservada para la interfaz
+UI_HEIGHT = 120
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
@@ -19,16 +19,14 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Recolector Mutante 2.0")
 font = pygame.font.SysFont(None, 36)
 
-# Fondo de juego
-BACKGROUND_PATH = "./assets/background.png"  # Cambia esto a la ruta real de tu fondo
+BACKGROUND_PATH = "./assets/background.png"
 background = pygame.image.load(BACKGROUND_PATH)
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
-# Música de fondo
-MUSIC_PATH = "./assets/song.mp3"  # Cambia esto a la ruta real de tu archivo de música
+MUSIC_PATH = "./assets/song.mp3"
 pygame.mixer.music.load(MUSIC_PATH)
 pygame.mixer.music.set_volume(0.5)
-pygame.mixer.music.play(-1)  # Bucle infinito
+pygame.mixer.music.play(-1)
 
 class Player:
     def __init__(self):
@@ -152,13 +150,14 @@ class Game:
                     self.player.has_shield = False
                 else:
                     self.player.lives -= 1
+                    self.immunity_start_time = now  # ← Corrección aquí
 
         for pu in self.power_ups[:]:
             if (px < pu.x + pu.size and px + self.player.size > pu.x and
                 py < pu.y + pu.size and py + self.player.size > pu.y):
                 self.power_ups.remove(pu)
                 if pu.kind == "shield":
-                    self.player.has_shield = True
+                    self.player.has_shield = True           
                 elif pu.kind == "slow":
                     self.slow_obstacles = True
                     self.slow_timer = time.time()
@@ -185,7 +184,7 @@ class Game:
 
         while True:
             screen.blit(background, (0, 0))
-            pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))  # Zona UI
+            pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -233,7 +232,21 @@ class Game:
                 return True
 
             if self.player.lives <= 0:
+                # Mostrar pantalla de colisión antes de terminar
+                screen.blit(background, (0, 0))
+                pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
+                self.player.draw()
+                for obs in self.obstacles:
+                    obs.draw()
+                for star in self.stars:
+                    star.draw()
+                for pu in self.power_ups:
+                    pu.draw()
+                self.draw_info()
+                pygame.display.flip()
+                pygame.time.delay(1000)  # Espera 1 segundo para mostrar que perdió la vida
                 return False
+
 
     def main_loop(self):
         screen.blit(background, (0, 0))
