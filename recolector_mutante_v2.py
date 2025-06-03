@@ -2,6 +2,8 @@ import pygame
 import sys
 import random
 import time
+import os
+from datetime import datetime
 
 pygame.init()
 
@@ -28,15 +30,25 @@ pygame.mixer.music.load(MUSIC_PATH)
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
 
+def guardar_puntaje(puntos):
+    ruta = os.path.join("data", "puntajes.txt")
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
+    with open(ruta, "a") as f:
+        f.write(f"{puntos} pts - {fecha}\n")
+
 class Player:
     def __init__(self):
         self.size = 50
         self.pos = [WIDTH // 2, (HEIGHT + UI_HEIGHT) // 2]
         self.lives = 3
         self.has_shield = False
+        self.image = pygame.image.load("./assets/collector.png")
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def draw(self):
-        pygame.draw.rect(screen, GREEN, (*self.pos, self.size, self.size))
+        screen.blit(self.image, self.pos)
         if self.has_shield:
             pygame.draw.rect(screen, YELLOW, (*self.pos, self.size, self.size), 3)
 
@@ -50,9 +62,11 @@ class Star:
         self.x = random.randint(0, WIDTH - self.size)
         self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
         self.spawn_time = time.time()
+        self.image = pygame.image.load("./assets/start.png")
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def draw(self):
-        pygame.draw.rect(screen, BLUE, (self.x, self.y, self.size, self.size))
+        screen.blit(self.image, (self.x, self.y))
 
 class PowerUp:
     def __init__(self):
@@ -60,10 +74,13 @@ class PowerUp:
         self.x = random.randint(0, WIDTH - self.size)
         self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
         self.kind = random.choice(["shield", "slow"])
+        filename = "shield.png" if self.kind == "shield" else "slow.png"
+        self.image = pygame.image.load(f"./assets/{filename}")
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
+
 
     def draw(self):
-        color = YELLOW if self.kind == "shield" else PURPLE
-        pygame.draw.rect(screen, color, (self.x, self.y, self.size, self.size))
+        screen.blit(self.image, (self.x, self.y))
 
 class Obstacle:
     def __init__(self, speed):
@@ -72,6 +89,8 @@ class Obstacle:
         self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
         self.dx = random.choice([-1, 1]) * speed
         self.dy = random.choice([-1, 1]) * speed
+        self.image = pygame.image.load("./assets/obstacle.png")
+        self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def move(self, speed_mod):
         self.x += self.dx * speed_mod
@@ -82,7 +101,7 @@ class Obstacle:
             self.dy *= -1
 
     def draw(self):
-        pygame.draw.rect(screen, RED, (self.x, self.y, self.size, self.size))
+        screen.blit(self.image, (self.x, self.y))
 
 class Game:
     def __init__(self):
@@ -105,7 +124,7 @@ class Game:
         self.slow_obstacles = False
         self.slow_timer = 0
         self.immunity_start_time = 0
-        self.immunity_duration = 5
+        self.immunity_duration = 3
 
     def spawn_star(self):
         self.stars.append(Star())
@@ -275,6 +294,9 @@ class Game:
         screen.blit(msg, (WIDTH // 2 - 150, HEIGHT // 2))
         pygame.display.flip()
         pygame.time.delay(3000)
+
+        guardar_puntaje(self.score)
+
         pygame.quit()
 
 if __name__ == "__main__":
