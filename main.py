@@ -1,9 +1,8 @@
-
 import pygame
 import sys
 import os
 from datetime import datetime
-from recolector_mutante_v2 import Game 
+from recolector_mutante_v2 import Game
 
 pygame.init()
 
@@ -11,28 +10,38 @@ WIDTH, HEIGHT = 800, 600
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
-font = pygame.font.SysFont(None, 36)
+MINT = (80, 211, 172)  # Color #50D3AC
+
+# Fuente personalizada
+font_path = os.path.join("assets", "Audiowide-Regular.ttf")
+font = pygame.font.Font(font_path, 32)
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Recolector Mutante 2.0 - Menú Principal")
 
 DATA_PATH = "data"
 PUNTAJES_FILE = os.path.join(DATA_PATH, "puntajes.txt")
-
 if not os.path.exists(DATA_PATH):
     os.makedirs(DATA_PATH)
 
-def draw_text_centered(text, y, color=WHITE):
-    text_surf = font.render(text, True, color)
-    screen.blit(text_surf, (WIDTH // 2 - text_surf.get_width() // 2, y))
+def draw_text_centered(text, y, color=WHITE, bg=None):
+    text_surf = font.render(text, True, color, bg)
+    text_rect = text_surf.get_rect(center=(WIDTH // 2, y))
+    screen.blit(text_surf, text_rect)
+
+def dibujar_fondo_con_marco():
+    screen.fill((10, 10, 10))
+    pygame.draw.rect(screen, (30, 30, 30), (50, 50, WIDTH - 100, HEIGHT - 100), border_radius=20)
+    pygame.draw.rect(screen, (80, 80, 80), (50, 50, WIDTH - 100, HEIGHT - 100), 2, border_radius=20)
 
 def pantalla_menu():
     opciones = ["1. Jugar", "2. Ver Puntajes", "3. Ayuda", "4. Créditos", "5. Salir"]
     seleccion = -1
     while seleccion == -1:
-        screen.fill(BLACK)
-        draw_text_centered("RECOLECTOR MUTANTE 2.0", 100)
+        dibujar_fondo_con_marco()
+        draw_text_centered("RECOLECTOR MUTANTE 2.0", 120, color=(255, 255, 0))
         for i, op in enumerate(opciones):
-            draw_text_centered(op, 180 + i * 50)
+            draw_text_centered(op, 200 + i * 50, color=MINT)
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -52,12 +61,12 @@ def pantalla_menu():
 
 def pantalla_ayuda():
     while True:
-        screen.fill(BLACK)
-        draw_text_centered("AYUDA", 60)
-        draw_text_centered("Usa las flechas para mover al personaje", 120)
-        draw_text_centered("Evita obstáculos y recoge estrellas", 160)
-        draw_text_centered("Recolecta power-ups (escudo, ralentizador)", 200)
-        draw_text_centered("Presiona ESC para volver al menú", 280)
+        dibujar_fondo_con_marco()
+        draw_text_centered("AYUDA", 80, color=(0, 255, 255))
+        draw_text_centered("Usa las flechas para mover al personaje", 140, color=MINT)
+        draw_text_centered("Evita obstáculos y recoge estrellas", 180, color=MINT)
+        draw_text_centered("Recolecta power-ups (escudo, ralentizador)", 220, color=MINT)
+        draw_text_centered("Presiona ESC para volver al menú", 320, color=GRAY)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -67,14 +76,14 @@ def pantalla_ayuda():
 
 def pantalla_creditos():
     while True:
-        screen.fill(BLACK)
-        draw_text_centered("CRÉDITOS", 60)
-        draw_text_centered("Desarrolladores:", 120)
-        draw_text_centered("Luis Mario Franco Gómez", 160)
-        draw_text_centered("Lizeth Juliana Barrios Gonzales", 200)
-        draw_text_centered("Materia: Computación Gráfica", 240)
-        draw_text_centered("Docente: Francisco Alejandro Medina Aguirre", 280)
-        draw_text_centered("Presiona ESC para volver al menú", 360)
+        dibujar_fondo_con_marco()
+        draw_text_centered("CRÉDITOS", 80, color=(255, 100, 200))
+        draw_text_centered("Desarrolladores:", 140, color=MINT)
+        draw_text_centered("Luis Mario Franco Gómez", 180, color=MINT)
+        draw_text_centered("Lizeth Juliana Barrios Gonzales", 220, color=MINT)
+        draw_text_centered("Materia: Computación Gráfica", 260, color=MINT)
+        draw_text_centered("Docente: Francisco Alejandro Medina Aguirre", 300, color=MINT)
+        draw_text_centered("Presiona ESC para volver al menú", 380, color=GRAY)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -84,16 +93,16 @@ def pantalla_creditos():
 
 def pantalla_puntajes():
     while True:
-        screen.fill(BLACK)
-        draw_text_centered("PUNTAJES", 60)
+        dibujar_fondo_con_marco()
+        draw_text_centered("PUNTAJES", 80, color=(0, 255, 0))
         if os.path.exists(PUNTAJES_FILE):
             with open(PUNTAJES_FILE, "r") as f:
                 lines = f.readlines()[-10:]
             for i, line in enumerate(lines):
-                draw_text_centered(line.strip(), 120 + i * 30)
+                draw_text_centered(line.strip(), 140 + i * 30)
         else:
             draw_text_centered("No hay puntajes guardados.", 150)
-        draw_text_centered("Presiona ESC para volver al menú", 500)
+        draw_text_centered("Presiona ESC para volver al menú", 500, color=GRAY)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -110,7 +119,6 @@ def guardar_puntaje(nombre, puntos):
 while True:
     accion = pantalla_menu()
     if accion == "jugar":
-        print("Iniciar juego...")
         juego = Game()
         juego.main_loop()
         break

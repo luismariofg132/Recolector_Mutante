@@ -49,10 +49,18 @@ class Player:
         self.image = pygame.image.load("./assets/collector.png")
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
-    def draw(self):
+    def draw(self, immune=False):
+        if immune:
+            # Parpadea solo si ha pasado un número impar de décimas de segundo
+            ticks = pygame.time.get_ticks() // 100
+            if ticks % 2 == 0:
+                return  # No dibuja este frame → efecto parpadeo
+
         screen.blit(self.image, self.pos)
+
         if self.has_shield:
             pygame.draw.rect(screen, YELLOW, (*self.pos, self.size, self.size), 3)
+
 
     def move(self, dx, dy):
         self.pos[0] = max(0, min(WIDTH - self.size, self.pos[0] + dx))
@@ -258,7 +266,8 @@ class Game:
             if self.slow_obstacles and (time.time() - self.slow_timer > 5):
                 self.slow_obstacles = False
 
-            self.player.draw()
+            immune = (time.time() - self.immunity_start_time) < self.immunity_duration
+            self.player.draw(immune)
             for star in self.stars:
                 star.draw()
             for pu in self.power_ups:
@@ -277,7 +286,9 @@ class Game:
                 # Mostrar pantalla de colisión antes de terminar
                 screen.blit(background, (0, 0))
                 pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
-                self.player.draw()
+                immune = (time.time() - self.immunity_start_time) < self.immunity_duration
+                self.player.draw(immune)
+
                 for obs in self.obstacles:
                     obs.draw()
                 for star in self.stars:
@@ -293,8 +304,9 @@ class Game:
     def main_loop(self):
         screen.blit(background, (0, 0))
         pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
-        intro_text = font.render("\u00a1Bienvenido a Recolector Mutante 2.0!", True, WHITE)
-        screen.blit(intro_text, (WIDTH // 2 - 220, HEIGHT // 2 - 50))
+        sub_text = font.render("Prepárate para recolectar... ¡y sobrevivir!", True, WHITE)
+        sub_rect = sub_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 10))
+        screen.blit(sub_text, sub_rect)
         pygame.display.flip()
         pygame.time.delay(2000)
 
