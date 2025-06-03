@@ -25,16 +25,35 @@ if not os.path.exists(DATA_PATH):
     os.makedirs(DATA_PATH)
 
 def draw_text_centered(text, y, color=WHITE, bg=None):
+    """
+    Dibuja un texto centrado horizontalmente en la pantalla.
+
+    Parámetros:
+    - text (str): Texto a mostrar.
+    - y (int): Coordenada vertical (eje Y) donde centrar el texto.
+    - color (tuple): Color del texto (por defecto: blanco).
+    - bg (tuple): Color de fondo del texto (por defecto: None, es transparente).
+    """
     text_surf = font.render(text, True, color, bg)
     text_rect = text_surf.get_rect(center=(WIDTH // 2, y))
     screen.blit(text_surf, text_rect)
 
 def dibujar_fondo_con_marco():
+    """
+    Dibuja el fondo del menú con un marco decorativo.
+    Se utiliza en todas las pantallas del menú principal.
+    """
     screen.fill((10, 10, 10))
     pygame.draw.rect(screen, (30, 30, 30), (50, 50, WIDTH - 100, HEIGHT - 100), border_radius=20)
     pygame.draw.rect(screen, (80, 80, 80), (50, 50, WIDTH - 100, HEIGHT - 100), 2, border_radius=20)
 
 def pantalla_menu():
+    """
+    Muestra la pantalla del menú principal con opciones de navegación.
+
+    Retorna:
+    - str: La acción seleccionada por el usuario ('jugar', 'puntajes', 'ayuda', 'creditos' o 'salir').
+    """
     opciones = ["1. Jugar", "2. Ver Puntajes", "3. Ayuda", "4. Créditos", "5. Salir"]
     seleccion = -1
     while seleccion == -1:
@@ -60,6 +79,10 @@ def pantalla_menu():
                     return "salir"
 
 def pantalla_ayuda():
+    """
+    Muestra la pantalla de ayuda con instrucciones del juego.
+    Permite regresar al menú principal presionando ESC.
+    """
     while True:
         dibujar_fondo_con_marco()
         draw_text_centered("AYUDA", 80, color=(0, 255, 255))
@@ -75,6 +98,11 @@ def pantalla_ayuda():
                 return
 
 def pantalla_creditos():
+    """
+    Muestra los créditos del juego incluyendo los desarrolladores y el docente.
+    Permite regresar al menú principal presionando ESC.
+    """
+
     while True:
         dibujar_fondo_con_marco()
         draw_text_centered("CRÉDITOS", 80, color=(255, 100, 200))
@@ -92,6 +120,11 @@ def pantalla_creditos():
                 return
 
 def pantalla_puntajes():
+    """
+    Muestra la pantalla de puntajes guardados.
+    Carga y muestra los últimos 10 puntajes desde el archivo 'puntajes.txt'.
+    Permite regresar al menú principal presionando ESC.
+    """
     while True:
         dibujar_fondo_con_marco()
         draw_text_centered("PUNTAJES", 80, color=(0, 255, 0))
@@ -111,6 +144,13 @@ def pantalla_puntajes():
                 return
 
 def guardar_puntaje(nombre, puntos):
+    """
+    Guarda un nuevo puntaje en el archivo 'puntajes.txt'.
+
+    Parámetros:
+    - nombre (str): Nombre del jugador.
+    - puntos (int): Puntos obtenidos por el jugador.
+    """
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
     with open(PUNTAJES_FILE, "a") as f:
         f.write(f"{nombre} - {puntos} pts - {fecha}\n")

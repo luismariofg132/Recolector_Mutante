@@ -33,6 +33,12 @@ pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
 
 def guardar_puntaje(puntos):
+    """
+    Guarda el puntaje obtenido en el archivo 'puntajes.txt', junto con la fecha y hora actual.
+
+    Parámetros:
+    - puntos (int): Puntuación obtenida por el jugador.
+    """
     ruta = os.path.join("data", "puntajes.txt")
     if not os.path.exists("data"):
         os.makedirs("data")
@@ -41,6 +47,10 @@ def guardar_puntaje(puntos):
         f.write(f"{puntos} pts - {fecha}\n")
 
 class Player:
+    """
+    Representa al jugador dentro del juego.
+    Controla la posición, vidas, escudo y renderizado del personaje.
+    """
     def __init__(self):
         self.size = 50
         self.pos = [WIDTH // 2, (HEIGHT + UI_HEIGHT) // 2]
@@ -50,6 +60,12 @@ class Player:
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def draw(self, immune=False):
+        """
+        Dibuja al jugador en pantalla, con efecto de parpadeo si es inmune y con borde si tiene escudo.
+
+        Parámetros:
+        - immune (bool): Indica si el jugador está en estado de inmunidad (parpadea si es True).
+        """
         if immune:
             # Parpadea solo si ha pasado un número impar de décimas de segundo
             ticks = pygame.time.get_ticks() // 100
@@ -63,11 +79,27 @@ class Player:
 
 
     def move(self, dx, dy):
+        """
+        Mueve al jugador en el eje X e Y respetando los límites de la pantalla.
+
+        Parámetros:
+        - dx (int): Desplazamiento en el eje X.
+        - dy (int): Desplazamiento en el eje Y.
+        """
+
         self.pos[0] = max(0, min(WIDTH - self.size, self.pos[0] + dx))
         self.pos[1] = max(UI_HEIGHT, min(HEIGHT - self.size, self.pos[1] + dy))
 
 class Star:
+    """
+    Representa una estrella que el jugador puede recolectar para obtener puntos.
+    """
+
     def __init__(self):
+        """
+        Inicializa una estrella con posición aleatoria y registra su tiempo de aparición.
+        Carga la imagen correspondiente.
+        """
         self.size = 30
         self.x = random.randint(0, WIDTH - self.size)
         self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
@@ -76,10 +108,18 @@ class Star:
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def draw(self):
+        """Dibuja la estrella en pantalla."""
         screen.blit(self.image, (self.x, self.y))
 
 class PowerUp:
+    """
+    Representa un potenciador que puede otorgar un escudo o ralentizar los obstáculos.
+    """
     def __init__(self):
+        """
+        Inicializa un PowerUp con tipo aleatorio ('shield' o 'slow') y posición aleatoria.
+        Carga la imagen correspondiente.
+        """
         self.size = 30
         self.x = random.randint(0, WIDTH - self.size)
         self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
@@ -90,10 +130,20 @@ class PowerUp:
 
 
     def draw(self):
+        """Dibuja el PowerUp en pantalla."""
         screen.blit(self.image, (self.x, self.y))
 
 class Obstacle:
+    """
+    Representa un obstáculo móvil que el jugador debe evitar.
+    """
     def __init__(self, speed):
+        """
+        Inicializa el obstáculo con una velocidad y dirección aleatoria.
+
+        Parámetros:
+        - speed (int): Velocidad del obstáculo.
+        """
         self.size = 40
         self.x = random.randint(0, WIDTH - self.size)
         self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
@@ -103,6 +153,12 @@ class Obstacle:
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
 
     def move(self, speed_mod):
+        """
+        Mueve el obstáculo por la pantalla y rebota en los bordes.
+
+        Parámetros:
+        - speed_mod (float): Modificador de velocidad (por ejemplo, para ralentizar).
+        """
         self.x += self.dx * speed_mod
         self.y += self.dy * speed_mod
         if self.x <= 0 or self.x >= WIDTH - self.size:
@@ -111,10 +167,18 @@ class Obstacle:
             self.dy *= -1
 
     def draw(self):
+        """Dibuja el obstáculo en pantalla."""
         screen.blit(self.image, (self.x, self.y))
 
 class Game:
+    """
+    Controlador principal del juego. Maneja la lógica del flujo del juego,
+    niveles, eventos, colisiones y renderizado.
+    """
     def __init__(self):
+        """
+        Inicializa el juego: jugador, listas de objetos, reglas, nivel y puntaje.
+        """
         self.player = Player()
         self.stars = []
         self.power_ups = []
@@ -137,18 +201,25 @@ class Game:
         self.immunity_duration = 3
 
     def spawn_star(self):
+        """Agrega una nueva estrella al juego."""
         self.stars.append(Star())
 
     def spawn_power_up(self):
+        """Agrega aleatoriamente un PowerUp al juego con probabilidad del 30%."""
         if random.random() < 0.3:
             self.power_ups.append(PowerUp())
 
     def spawn_obstacles(self):
+        """Genera una nueva lista de obstáculos según las reglas del nivel actual."""
         self.obstacles.clear()
         for _ in range(self.rules["num_obstacles"]):
             self.obstacles.append(Obstacle(self.rules["obstacle_speed"]))
 
     def draw_info(self):
+        """
+        Muestra la interfaz de información: nivel, puntaje, objetivo, tiempo restante,
+        vidas del jugador y si los controles están invertidos.
+        """
         # Fondo redondeado para la barra de información
         info_bg_rect = pygame.Rect(10, 10, WIDTH - 20, UI_HEIGHT - 20)
         pygame.draw.rect(screen, (20, 20, 20), info_bg_rect, border_radius=15)
@@ -180,6 +251,14 @@ class Game:
 
 
     def check_collisions(self):
+        """
+        Verifica colisiones entre el jugador y estrellas, obstáculos o PowerUps.
+        Aplica efectos como pérdida de vida, inmunidad, escudo o ralentización.
+
+        Retorna:
+        - bool: Siempre False (puede ser útil para señales futuras).
+        """
+
         px, py = self.player.pos
         now = time.time()
         immune = now - self.immunity_start_time < self.immunity_duration
@@ -214,6 +293,10 @@ class Game:
         return False
 
     def mutate_rules(self):
+        """
+        Realiza una mutación aleatoria en las reglas del juego:
+        aumenta velocidad, número de obstáculos o invierte controles.
+        """
         mutation = random.choice(list(self.rules.keys()))
         if mutation == "invert_controls":
             self.rules[mutation] = not self.rules[mutation]
@@ -221,6 +304,12 @@ class Game:
             self.rules[mutation] += 1
 
     def run_level(self):
+        """
+        Ejecuta un nivel completo del juego.
+
+        Retorna:
+        - bool: True si se completó el nivel, False si se pierde una vida o termina el juego.
+        """
         clock = pygame.time.Clock()
         self.player.pos = [WIDTH // 2, (HEIGHT + UI_HEIGHT) // 2]
         self.stars.clear()
@@ -302,6 +391,11 @@ class Game:
 
 
     def main_loop(self):
+        """
+        Bucle principal del juego. Maneja la presentación inicial,
+        la ejecución de niveles y el final del juego.
+        Guarda el puntaje final al terminar.
+        """
         screen.blit(background, (0, 0))
         pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
         sub_text = font.render("Prepárate para recolectar... ¡y sobrevivir!", True, WHITE)
