@@ -19,7 +19,9 @@ PURPLE = (128, 0, 128)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Recolector Mutante 2.0")
-font = pygame.font.SysFont(None, 36)
+font_path = "./assets/Audiowide-Regular.ttf"
+font = pygame.font.Font(font_path, 28)
+
 
 BACKGROUND_PATH = "./assets/background.png"
 background = pygame.image.load(BACKGROUND_PATH)
@@ -139,14 +141,35 @@ class Game:
             self.obstacles.append(Obstacle(self.rules["obstacle_speed"]))
 
     def draw_info(self):
-        info = font.render(f"Nivel: {self.level}  Puntos: {self.score}  Objetivo: {self.level * self.score_to_advance}  Vidas: {self.player.lives}", True, WHITE)
-        screen.blit(info, (20, 20))
-        if self.rules["invert_controls"]:
-            inv = font.render("Controles invertidos ACTIVOS", True, RED)
-            screen.blit(inv, (20, 60))
+        # Fondo redondeado para la barra de información
+        info_bg_rect = pygame.Rect(10, 10, WIDTH - 20, UI_HEIGHT - 20)
+        pygame.draw.rect(screen, (20, 20, 20), info_bg_rect, border_radius=15)
+        pygame.draw.rect(screen, (80, 80, 80), info_bg_rect, 2, border_radius=15)
+
+        # Mostrar corazones como vidas
+        heart_img = pygame.image.load("./assets/heart.png")
+        heart_img = pygame.transform.scale(heart_img, (30, 30))
+        for i in range(self.player.lives):
+            screen.blit(heart_img, (WIDTH - 40 * (i + 1), 20))
+
+        # Texto estilizado
+        nivel_text = font.render(f"Nivel: {self.level}", True, WHITE)
+        puntos_text = font.render(f"Puntos: {self.score}", True, WHITE)
+        objetivo_text = font.render(f"Objetivo: {self.level * self.score_to_advance}", True, WHITE)
         tiempo_restante = max(0, int(self.level_time_limit - (time.time() - self.start_time)))
-        timer_text = font.render(f"Tiempo restante: {tiempo_restante}s", True, WHITE)
-        screen.blit(timer_text, (20, 100))
+        tiempo_text = font.render(f"Tiempo: {tiempo_restante}s", True, WHITE)
+
+        # Posicionar textos
+        screen.blit(nivel_text, (30, 20))
+        screen.blit(puntos_text, (30, 55))
+        screen.blit(objetivo_text, (250, 20))
+        screen.blit(tiempo_text, (250, 55))
+
+        # Aviso si controles invertidos
+        if self.rules["invert_controls"]:
+            inv_text = font.render("Controles invertidos ACTIVOS", True, RED)
+            screen.blit(inv_text, (30, 90))
+
 
     def check_collisions(self):
         px, py = self.player.pos
