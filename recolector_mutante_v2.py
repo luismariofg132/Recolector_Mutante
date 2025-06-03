@@ -6,6 +6,7 @@ import time
 pygame.init()
 
 WIDTH, HEIGHT = 800, 600
+UI_HEIGHT = 120  # Altura reservada para la interfaz
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
@@ -18,10 +19,21 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Recolector Mutante 2.0")
 font = pygame.font.SysFont(None, 36)
 
+# Fondo de juego
+BACKGROUND_PATH = "./assets/background.png"  # Cambia esto a la ruta real de tu fondo
+background = pygame.image.load(BACKGROUND_PATH)
+background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+
+# Música de fondo
+MUSIC_PATH = "./assets/song.mp3"  # Cambia esto a la ruta real de tu archivo de música
+pygame.mixer.music.load(MUSIC_PATH)
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)  # Bucle infinito
+
 class Player:
     def __init__(self):
         self.size = 50
-        self.pos = [WIDTH // 2, HEIGHT // 2]
+        self.pos = [WIDTH // 2, (HEIGHT + UI_HEIGHT) // 2]
         self.lives = 3
         self.has_shield = False
 
@@ -32,13 +44,13 @@ class Player:
 
     def move(self, dx, dy):
         self.pos[0] = max(0, min(WIDTH - self.size, self.pos[0] + dx))
-        self.pos[1] = max(0, min(HEIGHT - self.size, self.pos[1] + dy))
+        self.pos[1] = max(UI_HEIGHT, min(HEIGHT - self.size, self.pos[1] + dy))
 
 class Star:
     def __init__(self):
         self.size = 30
         self.x = random.randint(0, WIDTH - self.size)
-        self.y = random.randint(0, HEIGHT - self.size)
+        self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
         self.spawn_time = time.time()
 
     def draw(self):
@@ -48,7 +60,7 @@ class PowerUp:
     def __init__(self):
         self.size = 30
         self.x = random.randint(0, WIDTH - self.size)
-        self.y = random.randint(0, HEIGHT - self.size)
+        self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
         self.kind = random.choice(["shield", "slow"])
 
     def draw(self):
@@ -59,7 +71,7 @@ class Obstacle:
     def __init__(self, speed):
         self.size = 40
         self.x = random.randint(0, WIDTH - self.size)
-        self.y = random.randint(0, HEIGHT - self.size)
+        self.y = random.randint(UI_HEIGHT, HEIGHT - self.size)
         self.dx = random.choice([-1, 1]) * speed
         self.dy = random.choice([-1, 1]) * speed
 
@@ -68,7 +80,7 @@ class Obstacle:
         self.y += self.dy * speed_mod
         if self.x <= 0 or self.x >= WIDTH - self.size:
             self.dx *= -1
-        if self.y <= 0 or self.y >= HEIGHT - self.size:
+        if self.y <= UI_HEIGHT or self.y >= HEIGHT - self.size:
             self.dy *= -1
 
     def draw(self):
@@ -94,6 +106,8 @@ class Game:
         self.start_time = 0
         self.slow_obstacles = False
         self.slow_timer = 0
+        self.immunity_start_time = 0
+        self.immunity_duration = 5
 
     def spawn_star(self):
         self.stars.append(Star())
@@ -119,6 +133,9 @@ class Game:
 
     def check_collisions(self):
         px, py = self.player.pos
+        now = time.time()
+        immune = now - self.immunity_start_time < self.immunity_duration
+
         for star in self.stars[:]:
             if (px < star.x + star.size and px + self.player.size > star.x and
                 py < star.y + star.size and py + self.player.size > star.y):
@@ -129,11 +146,12 @@ class Game:
         for obs in self.obstacles:
             if (px < obs.x + obs.size and px + self.player.size > obs.x and
                 py < obs.y + obs.size and py + self.player.size > obs.y):
+                if immune:
+                    continue
                 if self.player.has_shield:
                     self.player.has_shield = False
                 else:
                     self.player.lives -= 1
-                return True
 
         for pu in self.power_ups[:]:
             if (px < pu.x + pu.size and px + self.player.size > pu.x and
@@ -155,7 +173,7 @@ class Game:
 
     def run_level(self):
         clock = pygame.time.Clock()
-        self.player.pos = [WIDTH // 2, HEIGHT // 2]
+        self.player.pos = [WIDTH // 2, (HEIGHT + UI_HEIGHT) // 2]
         self.stars.clear()
         self.power_ups.clear()
         self.spawn_obstacles()
@@ -163,13 +181,17 @@ class Game:
             self.spawn_star()
         self.spawn_power_up()
         self.start_time = time.time()
+        self.immunity_start_time = time.time()
 
         while True:
-            screen.fill(BLACK)
+            screen.blit(background, (0, 0))
+            pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))  # Zona UI
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
             keys = pygame.key.get_pressed()
             dx = dy = 0
             if keys[pygame.K_LEFT]: dx -= self.rules["player_speed"]
@@ -178,14 +200,20 @@ class Game:
             if keys[pygame.K_DOWN]: dy += self.rules["player_speed"]
             if self.rules["invert_controls"]:
                 dx, dy = -dx, -dy
+
             self.player.move(dx, dy)
             for obs in self.obstacles:
                 obs.move(0.5 if self.slow_obstacles else 1)
-            if self.check_collisions() and self.player.lives <= 0:
-                return False
+
+            self.check_collisions()
+
             if time.time() - self.start_time > self.level_time_limit:
                 self.player.lives -= 1
-                return self.player.lives > 0
+                if self.player.lives <= 0:
+                    return False
+                else:
+                    return True
+
             if self.slow_obstacles and (time.time() - self.slow_timer > 5):
                 self.slow_obstacles = False
 
@@ -197,21 +225,27 @@ class Game:
             for obs in self.obstacles:
                 obs.draw()
             self.draw_info()
+
             pygame.display.flip()
             clock.tick(60)
+
             if not self.stars:
                 return True
 
+            if self.player.lives <= 0:
+                return False
+
     def main_loop(self):
-        # Intro
-        screen.fill(BLACK)
+        screen.blit(background, (0, 0))
+        pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
         intro_text = font.render("\u00a1Bienvenido a Recolector Mutante 2.0!", True, WHITE)
         screen.blit(intro_text, (WIDTH // 2 - 220, HEIGHT // 2 - 50))
         pygame.display.flip()
         pygame.time.delay(2000)
 
         for i in range(3, 0, -1):
-            screen.fill(BLACK)
+            screen.blit(background, (0, 0))
+            pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
             count_text = font.render(f"Empieza en... {i}", True, WHITE)
             screen.blit(count_text, (WIDTH // 2 - 100, HEIGHT // 2))
             pygame.display.flip()
@@ -222,12 +256,13 @@ class Game:
                 self.mutate_rules()
                 self.level += 1
 
-        screen.fill(BLACK)
+        screen.blit(background, (0, 0))
+        pygame.draw.rect(screen, BLACK, (0, 0, WIDTH, UI_HEIGHT))
         msg = font.render("\u00a1Juego Terminado!", True, WHITE)
         screen.blit(msg, (WIDTH // 2 - 150, HEIGHT // 2))
         pygame.display.flip()
         pygame.time.delay(3000)
         pygame.quit()
 
-# if __name__ == "__main__":
-#     Game().main_loop()
+if __name__ == "__main__":
+    Game().main_loop()

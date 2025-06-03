@@ -30,7 +30,7 @@ def pantalla_menu():
     seleccion = -1
     while seleccion == -1:
         screen.fill(BLACK)
-        draw_text_centered("MENÚ PRINCIPAL", 100)
+        draw_text_centered("RECOLECTOR MUTANTE 2.0", 100)
         for i, op in enumerate(opciones):
             draw_text_centered(op, 180 + i * 50)
         pygame.display.flip()
